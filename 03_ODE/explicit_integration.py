@@ -32,10 +32,55 @@ def implicit_Euler(dydt, t_span, y0, n):
 
     # *** start integration ***
     for i in range(n):
-        # explicit Euler
-        y[i+1,:] = 1/(1+h*(-100))*y[i,:]
+
+        # define function for Newton's method
+        def func(x):
+            return x - (y[i,:] + h * dydt(t[i+1], x))
+        
+        # solve for y[i+1,:] using Newton's method
+        y[i+1,:] = newtonMethodG(func, y[i,:]) 
 
     return t, y
+
+def newtonMethodG(f, x0, tol=1e-4, max_iter=500):
+
+    # initialize
+    x = np.array(x0, dtype=float)
+
+    # initial function value
+    fun = f(x)
+
+    # number of variables
+    n = len(x)
+
+    # finite difference step size
+    h = 1e-8
+
+    # start iterations
+    for _ in range(max_iter):
+        # compute Jacobian matrix
+        J = np.zeros((n, n))
+
+        # numerical differentiation
+        for j in range(n):
+            xp = x.copy()
+            xp[j] += h
+            J[:, j] = (f(xp) - fun) / h
+
+        # solve linear system
+        dx = np.linalg.solve(J, -fun)
+
+        # update solution
+        x = x + dx
+
+        # evaluate function at new point
+        fun = f(x)
+        
+        # check convergence
+        if np.linalg.norm(fun) < tol:
+            break
+
+    return x
 
 def midpoint_rule(dydt, t_span, y0, n):
 
